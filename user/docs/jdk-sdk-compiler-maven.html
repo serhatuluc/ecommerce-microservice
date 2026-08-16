@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Understanding JDK, SDK, the Java Compiler, and Maven Language Versions</title>
+  <style>
+    :root {
+      --ink: #1a1a1a;
+      --muted: #555;
+      --line: #ddd;
+      --bg: #fff;
+      --code-bg: #f5f5f5;
+      --accent: #0b5fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.65;
+    }
+
+    .page {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 48px 28px 72px;
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      line-height: 1.25;
+      margin: 0 0 16px;
+      font-weight: 700;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 0 0 36px;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin: 36px 0 12px;
+      padding-top: 8px;
+      border-top: 1px solid var(--line);
+    }
+
+    p { margin: 0 0 14px; }
+
+    ul {
+      margin: 0 0 16px;
+      padding-left: 1.25rem;
+    }
+
+    li { margin-bottom: 6px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 20px;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8f8f8;
+      font-weight: 600;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.9rem;
+      line-height: 1.45;
+      margin: 14px 0 18px;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 0.92em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    strong { font-weight: 700; }
+
+    .footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { max-width: none; padding: 0; }
+      h2 { break-after: avoid; }
+      pre, table { break-inside: avoid; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Understanding JDK, SDK, the Java Compiler, and Maven Language Versions</h1>
+    <p class="lead">
+      When you build a Spring Boot project, several tools work together before your application ever starts.
+      Names like <strong>JDK</strong>, <strong>SDK</strong>, <strong>compiler</strong>, and <strong>Maven</strong>
+      appear in project settings and build files, and it is easy to mix them up. This article explains what each
+      one is and how they relate.
+    </p>
+
+    <h2>1. What is the JDK?</h2>
+    <p>
+      The <strong>JDK</strong> (Java Development Kit) is the full toolkit for writing and running Java applications.
+      It typically includes:
+    </p>
+    <ul>
+      <li><strong><code>javac</code></strong> — the Java compiler</li>
+      <li><strong>JVM</strong> — the runtime that executes compiled programs</li>
+      <li><strong>Standard libraries</strong> — the built-in Java APIs</li>
+      <li>Supporting tools for packaging and debugging</li>
+    </ul>
+    <p>
+      When people say “I installed Java 22,” they usually mean they installed a <strong>JDK 22</strong>.
+      That installation is a concrete set of programs and libraries on disk. Different machines (or even the same
+      machine) can have several JDKs installed side by side: JDK 11, JDK 17, JDK 22, and so on.
+    </p>
+    <p>The JDK version matters because newer JDKs support newer language features.</p>
+
+    <h2>2. What is the SDK (in IntelliJ)?</h2>
+    <p>
+      <strong>SDK</strong> stands for Software Development Kit. In general software, an SDK is a broader package of
+      tools for building software.
+    </p>
+    <p>
+      In <strong>IntelliJ IDEA</strong>, the term <strong>Project SDK</strong> almost always means:
+      <em>which JDK should this project use?</em>
+    </p>
+    <p>So in practice:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Term</th>
+          <th>Meaning in a Java IDE project</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>JDK</strong></td>
+          <td>The actual Java installation on your machine</td>
+        </tr>
+        <tr>
+          <td><strong>Project SDK</strong></td>
+          <td>The IDE’s choice of which JDK to use for this project</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>
+      If IntelliJ says <strong>Project SDK = openjdk-22</strong>, it is telling the IDE: use JDK 22 to compile and
+      run this project. The SDK is not a second compiler. It is a pointer to a JDK.
+    </p>
+
+    <h2>3. Who is the compiler?</h2>
+    <p>The compiler is <strong><code>javac</code></strong>, a program that lives inside the JDK.</p>
+    <p>Its job is simple to describe and essential in practice:</p>
+    <pre><code>Your source code (.java)
+        ↓
+   javac (compiler)
+        ↓
+Bytecode (.class)
+        ↓
+   JVM runs the application</code></pre>
+    <p>
+      You write human-readable Java source files. The compiler turns them into <code>.class</code> files that the
+      JVM can execute. IntelliJ does not invent its own Java language compiler for ordinary builds; it invokes
+      <code>javac</code> from the selected Project SDK (JDK).
+    </p>
+    <p>
+      Maven builds do the same thing: they also call a Java compiler, usually from whatever JDK Maven is running with.
+    </p>
+
+    <h2>4. Language version: why “21” or “22” matter</h2>
+    <p>
+      Java has evolved through many versions: 8, 11, 17, 21, 22, and beyond. When you compile, you are not only
+      choosing <em>which JDK runs the compiler</em>; you also choose <em>which language level the source is treated as</em>.
+    </p>
+    <p>Common settings in Maven are:</p>
+    <ul>
+      <li><code>java.version</code></li>
+      <li><code>maven.compiler.source</code></li>
+      <li><code>maven.compiler.target</code></li>
+      <li><code>maven.compiler.release</code></li>
+    </ul>
+    <p>
+      These tell the build: “Treat this project as Java 22” (or 21, or another version).
+    </p>
+    <p>
+      A healthy project keeps the Project SDK and the Maven language version aligned. For example, if the IDE uses
+      JDK 22, the build should also declare Java 22.
+    </p>
+
+    <h2>5. Where does Maven fit in?</h2>
+    <p>
+      <strong>Maven</strong> is the build tool. Its configuration file is <strong><code>pom.xml</code></strong>.
+    </p>
+    <p>Maven decides:</p>
+    <ul>
+      <li>which libraries your project depends on</li>
+      <li>how the project is compiled and packaged</li>
+      <li>which Java language version the compiler should use</li>
+    </ul>
+    <p>Spring Initializr often sets something like:</p>
+    <pre><code>&lt;java.version&gt;21&lt;/java.version&gt;</code></pre>
+    <p>
+      That property is intended to tell Spring Boot and the Maven compiler plugin which Java version to use.
+      When everything is wired correctly, IntelliJ’s Project SDK and Maven’s language version should agree.
+    </p>
+
+    <h2>6. How the pieces fit together</h2>
+    <p>Here is the full picture in one place:</p>
+    <table>
+      <thead>
+        <tr>
+          <th>Piece</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>JDK</strong></td>
+          <td>The installed Java toolkit (includes <code>javac</code> and the JVM)</td>
+        </tr>
+        <tr>
+          <td><strong>Project SDK</strong></td>
+          <td>IntelliJ’s selected JDK for the project</td>
+        </tr>
+        <tr>
+          <td><strong>Compiler (<code>javac</code>)</strong></td>
+          <td>Turns <code>.java</code> into <code>.class</code></td>
+        </tr>
+        <tr>
+          <td><strong>Maven + <code>pom.xml</code></strong></td>
+          <td>Build tool and configuration, including language version</td>
+        </tr>
+        <tr>
+          <td><strong>Language version (21/22)</strong></td>
+          <td>Which Java level the source should be compiled as</td>
+        </tr>
+      </tbody>
+    </table>
+    <p>A healthy setup looks like this:</p>
+    <ol>
+      <li>Project SDK points to a modern JDK (for example, 22).</li>
+      <li><code>pom.xml</code> clearly says the project uses the same modern language level.</li>
+    </ol>
+    <p>When those points are aligned, the project compiles and runs smoothly.</p>
+
+    <h2>Conclusion</h2>
+    <p>
+      <strong>JDK</strong> is the real Java toolkit. <strong>SDK</strong>, in IntelliJ, is usually just the
+      project’s chosen JDK. The <strong>compiler</strong> is <code>javac</code>, and it is the program that turns
+      source code into bytecode. <strong>Maven</strong> tells that compiler which language version to use.
+    </p>
+    <p>
+      Once you see these roles clearly, Java tooling becomes much less mysterious: the tools are not competing
+      systems, but layers that must agree on one simple question — <em>which Java version are we building with?</em>
+    </p>
+
+    <p class="footer">JDK, SDK, Compiler, and Maven — learning notes</p>
+  </main>
+</body>
+</html>
